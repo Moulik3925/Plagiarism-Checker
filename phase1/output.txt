@@ -1,0 +1,1 @@
+clang++ -std=gnu++20 -g -fsanitize=address,undefined -Wall -Wshadow -Wuninitialized -Wtype-limits -Wno-unused-variable -I/usr/lib/llvm-18/include -lclang -L/usr/lib/llvm-18/lib -rpath /usr/lib/llvm-18/lib -fuse-ld=lld main.cpp tokenizer.cpp -o main
