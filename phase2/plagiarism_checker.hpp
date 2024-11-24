@@ -26,9 +26,12 @@ public:
 
 protected:
     // TODO: Add members and function signatures here
-    
+    std::chrono::system_clock::time_point begin_time;
     std::unordered_map<long long, std::vector<std::pair<std::shared_ptr<submission_t>, long long>>> hashes;
     std::vector<std::shared_ptr<submission_t>> submissions;
     std::map<std::shared_ptr<submission_t>, std::chrono::system_clock::time_point> time_stamps;
+
+
+    std::map<std::shared_ptr<submission_t>,int> num_pattern_clashes;
     // End TODO
 };

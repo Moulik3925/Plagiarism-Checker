@@ -260,14 +260,16 @@ std::array<int, 5> match_submissions(std::vector<int> &submission1,
     {
         hash2 = compute_hash(submission2, j, j + window_length);
 
-       
+       s
         if (hashes.find(hash2) != hashes.end())
         {
 
-            std::vector<ll> match_indices = hashes[hash2];
+            std::vector<std::pair<std::shared_ptr<submission_t>, long long>> match_pair = hashes[hash2];
             if (match_indices.empty())
                 continue;
-           
+
+
+            
             int max_length_matching = 0;
             int index_of_max_match = -1;
             for (auto match_index : match_indices)
