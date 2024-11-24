@@ -6,11 +6,6 @@
 #include<utility>
 #include<memory>
 #include<set>
-#include<queue>
-#include<mutex>
-#include<condition_variable>
-#include<functional>
-
 // -----------------------------------------------------------------------------
 
 // You are free to add any STL includes above this comment, below the --line--.
@@ -39,18 +34,15 @@ protected:
 
     void update_hashes(std::shared_ptr<submission_t> __submission, std::vector<int> tokens);
 
-    std::queue<std::function<void()>> task_queue;
+    std::queue<std::shared_ptr<submission_t>> task_queue;
     std::mutex mtx;
     std::condition_variable cv;
+    bool stop_flag;
     
     void evaluate_plagiarism(std::shared_ptr<submission_t> __submission);
     void continuous_worker();
 
-    std::thread continuous_worker_thread;
-
-    std::map<std::shared_ptr<submission_t> , bool> plagged_submissions_flag;
-
-    bool stop_thread = false;
+    
     std::map<std::shared_ptr<submission_t>,int> last_index_count;
     // End TODO
 };
