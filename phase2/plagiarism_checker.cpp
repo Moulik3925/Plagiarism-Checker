@@ -7,7 +7,7 @@
 #define ll long long
 using namespace std;
 ll BASE = 37;
-ll MODULUS = 1e9 + 9;
+ll MODULUS = 1e9 + 7;
 int window_length = 15;
 
 ll compute_hash(std::vector<int> &submission, int start, int end)
@@ -29,6 +29,7 @@ plagiarism_checker_t::plagiarism_checker_t(std::vector<std::shared_ptr<submissio
     submissions = __submissions;
     for (auto submission : submissions)
     {
+        last_index_count[submission] = -2* window_length;
         time_stamps[submission] = begin_time;
         auto code = submission->codefile;
         tokenizer_t tokenizer(code);
@@ -38,14 +39,26 @@ plagiarism_checker_t::plagiarism_checker_t(std::vector<std::shared_ptr<submissio
             hashes[hash].push_back({submission, hash});
         }
     }
-
-
-
 }
 plagiarism_checker_t::~plagiarism_checker_t()
 {
 
 }
+
+void plagiarism_checker_t::update_hashes(std::shared_ptr<submission_t> __submission, std::vector<int> tokens)
+{
+    for(auto x : last_index_count)
+    {
+        last_index_count[x.first] = -2*window_length;
+    }
+    last_index_count[__submission] = -2*window_length;
+
+    for(int i = 0; i < tokens.size() - 14; i++){
+        ll hash = compute_hash(tokens, i, i + window_length);
+        hashes[hash].push_back({__submission, hash});
+    }
+}
+
 
 void plagiarism_checker_t::add_submission(std::shared_ptr<submission_t> __submission)
 {
@@ -56,25 +69,7 @@ void plagiarism_checker_t::add_submission(std::shared_ptr<submission_t> __submis
     tokenizer_t tokenizer(code);
     auto tokens = tokenizer.get_tokens();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    std::set<std::shared_ptr<submission_t>> plagged_submissions;
 
 
 
@@ -92,24 +87,24 @@ void plagiarism_checker_t::add_submission(std::shared_ptr<submission_t> __submis
                 continue;
            
 
-            // mmatch inddices for all in match indices map[submission file] ka count += 1
             
 
             std::shared_ptr<submission_t> prev_file;
             for (auto match_indice : match_indices)
             {
-
-                num_pattern_clashes[match_indice.first] += 1;
+                
+                if(j - last_index_count[match_indice.first] >= window_length)
+                {
+                    num_pattern_clashes[match_indice.first] += 1;
+                    last_index_count[match_indice.first] = j;
+                }
                 if(num_pattern_clashes[match_indice.first] >= 10)
                 {
-                    if(__submission->student != NULL) __submission->student->flag_student(__submission);
-                    if(__submission->professor != NULL) __submission->professor->flag_professor(__submission);
-
+                    plagged_submissions.insert(__submission);
+                   
                     if (std::chrono::duration_cast<std::chrono::seconds>(time_stamps[__submission] - time_stamps[match_indice.first]).count() < 1)
                     {
-                        // mark prev file as plag
-                        if(match_indice.first->student != NULL) match_indice.first->student->flag_student(match_indice.first);
-                        if(match_indice.first->professor != NULL) match_indice.first->professor->flag_professor(match_indice.first);
+                        plagged_submissions.insert(match_indice.first);
                     }
                 }
 
@@ -161,14 +156,16 @@ void plagiarism_checker_t::add_submission(std::shared_ptr<submission_t> __submis
                    if(prev_file != NULL) 
                    {
                     // mark current file as plag
-                    if(__submission->student != NULL) __submission->student->flag_student(__submission);
-                    if(__submission->professor != NULL) __submission->professor->flag_professor(__submission);
+                    plagged_submissions.insert(__submission);
+                    // if(__submission->student != NULL) __submission->student->flag_student(__submission);
+                    // if(__submission->professor != NULL) __submission->professor->flag_professor(__submission);
 
                     if (std::chrono::duration_cast<std::chrono::seconds>(time_stamps[__submission] - time_stamps[prev_file]).count() < 1)
                     {
                         // mark prev file as plag
-                        if(prev_file->student != NULL) prev_file->student->flag_student(prev_file);
-                        if(prev_file->professor != NULL) prev_file->professor->flag_professor(prev_file);
+                        plagged_submissions.insert(prev_file);
+                        // if(prev_file->student != NULL) prev_file->student->flag_student(prev_file);
+                        // if(prev_file->professor != NULL) prev_file->professor->flag_professor(prev_file);
                     }
                     }
                     // j += window_length - 1;
@@ -177,6 +174,12 @@ void plagiarism_checker_t::add_submission(std::shared_ptr<submission_t> __submis
         }
         
 
+    }
+
+    for(auto x : plagged_submissions)
+    {
+        if(x->student != NULL) x->student->flag_student(x);
+        if(x->professor != NULL) x->professor->flag_professor(x);
     }
     update_hashes(__submission, tokens);
     num_pattern_clashes.clear();
